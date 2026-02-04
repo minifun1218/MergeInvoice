@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>发票预览与处理 - 发票管理系统</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {primary: "#1A1A1A", "background-light": "#f7f7f7", "background-dark": "#191919"}, fontFamily: {display: "Inter"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}}}};</script>
+<style type="text/tailwindcss">
+        body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
+        .material-symbols-outlined { font-size: 24px; }
+        .a4-page {
+            width: 100%;
+            aspect-ratio: 1 / 1.414;
+            background: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }.preview-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .preview-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .preview-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark .preview-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#0d141b] dark:text-slate-100">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#e7edf3] dark:border-slate-800 bg-white dark:bg-background-dark px-10 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-primary">
+<div class="size-6">
+<span class="material-symbols-outlined">receipt_long</span>
+</div>
+<h2 class="text-[#0d141b] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">发票管理系统</h2>
+</div>
+<div class="flex items-center gap-9">
+<a class="text-[#0d141b] dark:text-slate-300 text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">首页</a>
+<a class="text-primary text-sm font-bold leading-normal border-b-2 border-primary" href="#">发票处理</a>
+<a class="text-[#0d141b] dark:text-slate-300 text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">历史记录</a>
+<a class="text-[#0d141b] dark:text-slate-300 text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">系统设置</a>
+</div>
+</div>
+<div class="flex flex-1 justify-end gap-6">
+<label class="flex flex-col min-w-40 !h-10 max-w-64">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+<div class="text-[#4c739a] flex border-none bg-[#e7edf3] dark:bg-slate-800 items-center justify-center pl-4 rounded-l-lg border-r-0">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0d141b] dark:text-white focus:outline-0 focus:ring-0 border-none bg-[#e7edf3] dark:bg-slate-800 focus:border-none h-full placeholder:text-[#4c739a] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal" placeholder="搜索发票..." value=""/>
+</div>
+</label>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-slate-200 dark:border-slate-700" data-alt="User profile avatar placeholder" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAGbSQFK_81elJo4dsIJmXtmtXapnYP30iabn_U-DCS5BTgsrrw30SrbZfIicBiaYHRR1o49-aSta9RidOnMF_qeLSkEg2gisAKmvf47wUR5NzgPCzSn16UvKm7dclNYGSNWrbJjpFM2pLXQBqPFG0KDw0n0CkfxG0nTPfWvzfd5cnprGgKmlUC6NLB8YSbd5N1R7IhqXxIgjLIvkdO9vW_RzDYOoeslYKn0sxuEkPK_5T_QUkiCod3BMLBhfm1Jiyqp70QlEmwnWs");'></div>
+</div>
+</header>
+<main class="flex flex-col px-10 py-5 gap-4">
+<div class="flex flex-wrap gap-2 py-2">
+<a class="text-[#4c739a] text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">首页</a>
+<span class="text-[#4c739a] text-sm font-medium leading-normal">/</span>
+<span class="text-[#0d141b] dark:text-slate-200 text-sm font-medium leading-normal">发票预览与处理</span>
+</div>
+<div class="flex flex-wrap justify-between items-center gap-3 py-2">
+<div class="flex min-w-72 flex-col gap-1">
+<p class="text-[#0d141b] dark:text-white tracking-light text-[32px] font-bold leading-tight">发票预览与处理</p>
+<p class="text-[#4c739a] dark:text-slate-400 text-sm font-normal leading-normal">预览合并结果并管理发票明细，支持A4规格(2合1)打印排版</p>
+</div>
+<div class="flex gap-3">
+<button class="flex min-w-[100px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#e7edf3] dark:bg-slate-800 text-[#0d141b] dark:text-slate-200 text-sm font-medium leading-normal hover:bg-[#d0dbe7] transition-colors">
+<span class="truncate">保存草稿</span>
+</button>
+<button class="flex min-w-[100px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-medium leading-normal shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors">
+<span class="truncate">生成 PDF</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-8 mt-4 items-start">
+<div class="col-span-7 flex flex-col gap-4">
+<div class="flex items-center justify-between pb-2">
+<h3 class="text-[#0d141b] dark:text-white tracking-light text-xl font-bold leading-tight">A4 打印预览 (2合1)</h3>
+<div class="flex items-center gap-4">
+<span class="text-[#4c739a] text-xs font-medium">当前共 2 页</span>
+<div class="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-1">
+<button class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors">
+<span class="material-symbols-outlined !text-xl">zoom_in</span>
+</button>
+<button class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors">
+<span class="material-symbols-outlined !text-xl">zoom_out</span>
+</button>
+</div>
+</div>
+</div>
+<div class="relative bg-slate-200 dark:bg-slate-950 rounded-xl border border-slate-300 dark:border-slate-800 overflow-hidden shadow-inner">
+<div class="h-[750px] overflow-y-auto p-8 preview-scrollbar flex flex-col items-center gap-12">
+<div class="flex flex-col gap-4 w-full max-w-[530px]">
+<div class="a4-page relative p-8 flex flex-col gap-6 dark:bg-slate-900">
+<div class="flex-1 border border-slate-200 dark:border-slate-700 rounded-sm p-4 relative bg-white dark:bg-slate-800 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-4">
+<div class="w-32 h-6 bg-slate-100 dark:bg-slate-700 rounded"></div>
+<div class="w-20 h-4 bg-slate-50 dark:bg-slate-700 rounded"></div>
+</div>
+<div class="space-y-3">
+<div class="w-full h-3 bg-slate-50 dark:bg-slate-700/50 rounded"></div>
+<div class="w-5/6 h-3 bg-slate-50 dark:bg-slate-700/50 rounded"></div>
+<div class="w-4/6 h-3 bg-slate-50 dark:bg-slate-700/50 rounded"></div>
+</div>
+</div>
+<div class="absolute bottom-6 right-6 w-16 h-16 border-2 border-red-400/20 rounded-full flex items-center justify-center text-[10px] text-red-400/40 font-bold uppercase rotate-12 pointer-events-none">发票专用章</div>
+</div>
+<div class="w-full border-t-2 border-dashed border-slate-200 dark:border-slate-700"></div>
+<div class="flex-1 border border-slate-200 dark:border-slate-700 rounded-sm p-4 relative bg-white dark:bg-slate-800 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-4">
+<div class="w-32 h-6 bg-slate-100 dark:bg-slate-700 rounded"></div>
+<div class="w-20 h-4 bg-slate-50 dark:bg-slate-700 rounded"></div>
+</div>
+<div class="space-y-3">
+<div class="w-full h-3 bg-slate-50 dark:bg-slate-700/50 rounded"></div>
+<div class="w-3/4 h-3 bg-slate-50 dark:bg-slate-700/50 rounded"></div>
+</div>
+</div>
+<div class="absolute bottom-6 right-6 w-16 h-16 border-2 border-red-400/20 rounded-full flex items-center justify-center text-[10px] text-red-400/40 font-bold uppercase rotate-12 pointer-events-none">发票专用章</div>
+</div>
+</div>
+<div class="flex justify-between items-center px-1">
+<span class="text-[#4c739a] text-xs font-medium">第 1 页 / 共 2 页</span>
+<span class="text-[#4c739a] text-[10px]">包含：餐饮服务、办公用品</span>
+</div>
+</div>
+<div class="flex flex-col gap-4 w-full max-w-[530px]">
+<div class="a4-page relative p-8 flex flex-col gap-6 dark:bg-slate-900">
+<div class="flex-1 border border-slate-200 dark:border-slate-700 rounded-sm p-4 relative bg-white dark:bg-slate-800 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-4">
+<div class="w-32 h-6 bg-slate-100 dark:bg-slate-700 rounded"></div>
+<div class="w-20 h-4 bg-slate-50 dark:bg-slate-700 rounded"></div>
+</div>
+<div class="space-y-3">
+<div class="w-full h-3 bg-slate-50 dark:bg-slate-700/50 rounded"></div>
+<div class="w-4/5 h-3 bg-slate-50 dark:bg-slate-700/50 rounded"></div>
+</div>
+</div>
+<div class="absolute bottom-6 right-6 w-16 h-16 border-2 border-red-400/20 rounded-full flex items-center justify-center text-[10px] text-red-400/40 font-bold uppercase rotate-12 pointer-events-none">发票专用章</div>
+</div>
+<div class="w-full border-t-2 border-dashed border-slate-200 dark:border-slate-700"></div>
+<div class="flex-1 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-sm p-4 flex items-center justify-center">
+<p class="text-slate-300 dark:text-slate-700 text-xs italic">待添加更多发票...</p>
+</div>
+</div>
+<div class="flex justify-between items-center px-1">
+<span class="text-[#4c739a] text-xs font-medium">第 2 页 / 共 2 页</span>
+<span class="text-[#4c739a] text-[10px]">包含：交通运输</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="col-span-5 flex flex-col gap-6">
+<div class="p-6 rounded-xl bg-white dark:bg-slate-900 border-2 border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center gap-3 hover:border-primary transition-colors cursor-pointer">
+<div class="size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined">add_circle</span>
+</div>
+<div class="text-center">
+<p class="text-[#0d141b] dark:text-white text-sm font-bold">添加更多发票</p>
+<p class="text-[#4c739a] text-xs">拖拽文件或点击此处上传 (PDF, JPG, PNG)</p>
+</div>
+</div>
+<div class="flex flex-col bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+<div class="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+<h4 class="text-[#0d141b] dark:text-white font-bold text-sm">发票明细 (3)</h4>
+<span class="text-primary text-xs font-medium cursor-pointer">批量编辑</span>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-sm">
+<thead>
+<tr class="text-[#4c739a] bg-background-light dark:bg-slate-800/50">
+<th class="px-4 py-3 font-medium">日期</th>
+<th class="px-4 py-3 font-medium">供应商</th>
+<th class="px-4 py-3 font-medium text-right">金额</th>
+<th class="px-4 py-3 font-medium text-center">操作</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+<td class="px-4 py-4 dark:text-slate-300">2023-10-12</td>
+<td class="px-4 py-4 dark:text-slate-300">北京凯悦餐饮</td>
+<td class="px-4 py-4 text-right font-medium text-[#0d141b] dark:text-white">¥450.00</td>
+<td class="px-4 py-4 text-center">
+<button class="text-[#4c739a] hover:text-red-500 transition-colors">
+<span class="material-symbols-outlined !text-xl">delete</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+<td class="px-4 py-4 dark:text-slate-300">2023-10-14</td>
+<td class="px-4 py-4 dark:text-slate-300">京东办公用品</td>
+<td class="px-4 py-4 text-right font-medium text-[#0d141b] dark:text-white">¥1,280.00</td>
+<td class="px-4 py-4 text-center">
+<button class="text-[#4c739a] hover:text-red-500 transition-colors">
+<span class="material-symbols-outlined !text-xl">delete</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+<td class="px-4 py-4 dark:text-slate-300">2023-10-15</td>
+<td class="px-4 py-4 dark:text-slate-300">滴滴出行</td>
+<td class="px-4 py-4 text-right font-medium text-[#0d141b] dark:text-white">¥56.50</td>
+<td class="px-4 py-4 text-center">
+<button class="text-[#4c739a] hover:text-red-500 transition-colors">
+<span class="material-symbols-outlined !text-xl">delete</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800">
+<div class="flex justify-between items-center text-sm">
+<span class="text-[#4c739a]">总计金额</span>
+<span class="text-xl font-bold text-primary">¥ 1,786.50</span>
+</div>
+</div>
+</div>
+<div class="p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
+<h4 class="text-[#0d141b] dark:text-white font-bold mb-1 text-sm">下载选项</h4>
+<div class="grid grid-cols-1 gap-3">
+<label class="flex items-center gap-3 p-3 rounded-lg border border-primary bg-primary/5 dark:border-primary/50 cursor-pointer group transition-all">
+<div class="size-5 rounded-full border-2 border-primary flex items-center justify-center p-1">
+<div class="size-full bg-primary rounded-full"></div>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold text-[#0d141b] dark:text-white">合并为 PDF (打印推荐)</p>
+<p class="text-xs text-[#4c739a]">2张/页 A4 排版，含文件目录</p>
+</div>
+<span class="material-symbols-outlined text-primary">picture_as_pdf</span>
+</label>
+<label class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary/50 cursor-pointer group transition-all">
+<div class="size-5 rounded-full border-2 border-slate-300 dark:border-slate-600"></div>
+<div class="flex-1">
+<p class="text-sm font-bold text-[#0d141b] dark:text-white">原始文件压缩包 (ZIP)</p>
+<p class="text-xs text-[#4c739a]">包含识别出的结构化数据 CSV</p>
+</div>
+<span class="material-symbols-outlined text-slate-300 group-hover:text-primary">folder_zip</span>
+</label>
+</div>
+<button class="w-full flex items-center justify-center gap-2 rounded-lg h-12 bg-primary text-white font-bold text-base shadow-lg shadow-primary/30 hover:bg-primary/90 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined">download</span>
+<span>确认并下载合并文件</span>
+</button>
+<p class="text-[10px] text-center text-[#4c739a]">文件将保留在系统 30 天，请及时保存</p>
+</div>
+</div>
+</div>
+</main>
+<div class="h-10"></div>
+</div>
+</div>
+</body></html>

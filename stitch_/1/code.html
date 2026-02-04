@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>发票上传页面 - 发票管理系统</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#137fec",
+              "background-light": "#f6f7f8",
+              "background-dark": "#101922",
+            },
+            fontFamily: {
+              "display": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#0d141b] dark:text-slate-200 min-h-screen">
+<div class="layout-container flex flex-col min-h-screen">
+<!-- TopNavBar Component -->
+<header class="flex items-center justify-between border-b border-solid border-[#e7edf3] dark:border-slate-800 px-4 md:px-10 py-3 bg-white dark:bg-background-dark sticky top-0 z-50">
+<div class="flex items-center gap-4">
+<div class="text-primary size-8 flex items-center justify-center">
+<span class="material-symbols-outlined text-3xl">receipt_long</span>
+</div>
+<h2 class="text-[#0d141b] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">发票管理系统</h2>
+</div>
+<div class="flex flex-1 justify-end gap-8">
+<nav class="hidden md:flex items-center gap-9">
+<a class="text-primary text-sm font-semibold leading-normal" href="#">发票上传</a>
+<a class="text-[#4c739a] dark:text-slate-400 text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">发票合并</a>
+<a class="text-[#4c739a] dark:text-slate-400 text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">报销记录</a>
+<a class="text-[#4c739a] dark:text-slate-400 text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">设置</a>
+</nav>
+<div class="flex gap-2">
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 dark:bg-slate-800 text-[#0d141b] dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 dark:bg-slate-800 text-[#0d141b] dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<main class="flex-1 flex flex-col items-center">
+<div class="w-full max-w-[960px] px-4 py-8">
+<!-- Breadcrumbs Component -->
+<nav class="flex flex-wrap gap-2 py-4 mb-2">
+<a class="text-[#4c739a] dark:text-slate-400 text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">首页</a>
+<span class="text-[#4c739a] dark:text-slate-600 text-sm font-medium leading-normal">/</span>
+<span class="text-[#0d141b] dark:text-white text-sm font-medium leading-normal">发票上传</span>
+</nav>
+<!-- Headline & Body Text -->
+<div class="text-center mb-10">
+<h1 class="text-[#0d141b] dark:text-white tracking-tight text-3xl font-bold leading-tight pb-2">上传发票</h1>
+<p class="text-[#4c739a] dark:text-slate-400 text-base font-normal leading-normal max-w-2xl mx-auto">
+                        请上传您的PDF、JPG或PNG格式的发票文件。系统将自动提取日期、金额及税号等核心财务信息，提高您的报销效率。
+                    </p>
+</div>
+<!-- EmptyState / Upload Area -->
+<div class="flex flex-col mb-12">
+<div class="flex flex-col items-center gap-6 rounded-xl border-2 border-dashed border-primary/40 dark:border-primary/30 bg-white dark:bg-slate-900/50 px-6 py-20 transition-all hover:border-primary">
+<div class="size-16 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-4xl">cloud_upload</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<p class="text-[#0d141b] dark:text-white text-xl font-bold leading-tight tracking-[-0.015em] text-center">
+                                点击或将文件拖拽到此处上传
+                            </p>
+<p class="text-[#4c739a] dark:text-slate-400 text-sm font-normal leading-normal text-center">
+                                支持 PDF, JPG, PNG 格式 (单个文件不超过10MB)
+                            </p>
+</div>
+<div class="flex gap-3">
+<button class="flex min-w-[120px] cursor-pointer items-center justify-center rounded-lg h-11 px-6 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors">
+                                浏览本地文件
+                            </button>
+<button class="flex min-w-[120px] cursor-pointer items-center justify-center rounded-lg h-11 px-6 bg-slate-100 dark:bg-slate-800 text-[#0d141b] dark:text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                                扫描二维码上传
+                            </button>
+</div>
+</div>
+</div>
+<!-- Queued Files List Placeholder -->
+<div class="flex flex-col gap-4">
+<div class="flex items-center justify-between px-4">
+<h3 class="text-lg font-bold text-[#0d141b] dark:text-white">待处理列表 (3)</h3>
+<button class="text-primary text-sm font-semibold hover:underline">全部清空</button>
+</div>
+<div class="space-y-3">
+<!-- Queued Item 1 -->
+<div class="flex items-center gap-4 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+<div class="size-10 bg-slate-100 dark:bg-slate-700 rounded flex items-center justify-center text-red-500">
+<span class="material-symbols-outlined">picture_as_pdf</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-semibold text-[#0d141b] dark:text-white truncate">增值税专用发票_北京京东_20231024.pdf</p>
+<p class="text-xs text-[#4c739a] dark:text-slate-400">1.2 MB · 就绪</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-slate-400 cursor-pointer hover:text-red-500 transition-colors">delete</span>
+</div>
+</div>
+<!-- Queued Item 2 -->
+<div class="flex items-center gap-4 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+<div class="size-10 bg-slate-100 dark:bg-slate-700 rounded flex items-center justify-center text-blue-500">
+<span class="material-symbols-outlined">image</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-semibold text-[#0d141b] dark:text-white truncate">餐费发票_20231102.jpg</p>
+<p class="text-xs text-[#4c739a] dark:text-slate-400">842 KB · 就绪</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-slate-400 cursor-pointer hover:text-red-500 transition-colors">delete</span>
+</div>
+</div>
+<!-- Queued Item 3 (Processing) -->
+<div class="flex items-center gap-4 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+<div class="size-10 bg-slate-100 dark:bg-slate-700 rounded flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">receipt</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-semibold text-[#0d141b] dark:text-white truncate">滴滴出行行程报销单.pdf</p>
+<div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full mt-2 overflow-hidden">
+<div class="bg-primary h-full w-[65%] rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-xs font-medium text-primary">65%</span>
+</div>
+</div>
+</div>
+<div class="flex justify-center mt-8">
+<button class="flex min-w-[240px] cursor-pointer items-center justify-center rounded-lg h-12 px-8 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined mr-2">send</span>
+                            开始解析并提交
+                        </button>
+</div>
+</div>
+<!-- Footer Tip -->
+<div class="mt-16 text-center">
+<div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 dark:bg-primary/10 border border-blue-100 dark:border-primary/20">
+<span class="material-symbols-outlined text-primary text-sm">info</span>
+<span class="text-xs text-[#4c739a] dark:text-slate-400 font-medium">提示：上传后系统将通过 OCR 识别发票代码、号码、金额及日期</span>
+</div>
+</div>
+</div>
+</main>
+<footer class="border-t border-slate-200 dark:border-slate-800 py-6 mt-auto">
+<div class="max-w-[960px] mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-[#4c739a] dark:text-slate-500">
+<p>© 2023 发票管理助手. 保留所有权利。</p>
+<div class="flex gap-6">
+<a class="hover:text-primary transition-colors" href="#">隐私政策</a>
+<a class="hover:text-primary transition-colors" href="#">服务条款</a>
+<a class="hover:text-primary transition-colors" href="#">联系支持</a>
+</div>
+</div>
+</footer>
+</div>
+</body></html>
