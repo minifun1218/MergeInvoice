@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useInvoiceStore } from '@/stores/invoice'
 import { batchUpload } from '@/utils/upload'
+import { getInvoiceList } from '@/api/invoice'
 import type { UploadFileItem } from '@/types/invoice'
 
 const router = useRouter()
@@ -60,14 +61,18 @@ function handleDrop(event: DragEvent) {
   }
 }
 
-// 添加文件到队列
-function addFiles(files: File[]) {
+// 添加文件到队列并自动上传
+async function addFiles(files: File[]) {
   const validFiles = files.filter((file) => {
     const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']
     const maxSize = 10 * 1024 * 1024 // 10MB
     return validTypes.includes(file.type) && file.size <= maxSize
   })
+  if (validFiles.length === 0) return
+
   invoiceStore.addToUploadQueue(validFiles)
+  // 自动开始上传
+  await startUpload()
 }
 
 // 移除文件
@@ -114,10 +119,16 @@ async function startUpload() {
     },
   )
 
-  // 上传完成后跳转到预览页
-  setTimeout(() => {
-    router.push('/preview')
-  }, 1000)
+  // 上传完成后获取发票列表并跳转到预览页
+  try {
+    const res = await getInvoiceList({ page: 1, pageSize: 100 })
+    if (res.code === 0 && res.data?.data) {
+      invoiceStore.addInvoices(res.data.data)
+    }
+  } catch (error) {
+    console.error('获取发票列表失败:', error)
+  }
+  router.push('/preview')
 }
 
 // 计算是否有正在上传的文件

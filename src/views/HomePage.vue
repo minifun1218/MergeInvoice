@@ -20,7 +20,7 @@ const stats = ref({
   savedChange: 0,
 })
 
-// 模拟数据
+// 加载数据
 onMounted(async () => {
   loading.value = true
   try {
@@ -36,69 +36,8 @@ onMounted(async () => {
     if (listRes.code === 0) {
       recentInvoices.value = listRes.data.data
     }
-  } catch {
-    // 使用模拟数据
-    stats.value = {
-      processedCount: 1284,
-      processedChange: 12.5,
-      pendingCount: 12,
-      pendingChange: -2.4,
-      savedTax: 4590.2,
-      savedChange: 5.8,
-    }
-    recentInvoices.value = [
-      {
-        id: '1',
-        code: '044001900111',
-        number: '12345678',
-        type: 'vat_special',
-        sellerName: '上海某某科技有限公司',
-        buyerName: '北京某某公司',
-        date: '2023-11-20',
-        amount: 1106.19,
-        taxAmount: 143.81,
-        totalAmount: 1250.0,
-        status: 'verified',
-        fileUrl: '',
-        fileType: 'pdf',
-        createdAt: '2023-11-20T10:00:00Z',
-        updatedAt: '2023-11-20T10:00:00Z',
-      },
-      {
-        id: '2',
-        code: '044001900112',
-        number: '87654321',
-        type: 'flight',
-        sellerName: '中国东方航空股份有限公司',
-        buyerName: '北京某某公司',
-        date: '2023-11-18',
-        amount: 2840.0,
-        taxAmount: 0,
-        totalAmount: 2840.0,
-        status: 'reviewing',
-        fileUrl: '',
-        fileType: 'pdf',
-        createdAt: '2023-11-18T10:00:00Z',
-        updatedAt: '2023-11-18T10:00:00Z',
-      },
-      {
-        id: '3',
-        code: '044001900113',
-        number: '11223344',
-        type: 'taxi',
-        sellerName: '北京滴滴支付有限公司',
-        buyerName: '北京某某公司',
-        date: '2023-11-15',
-        amount: 45.5,
-        taxAmount: 0,
-        totalAmount: 45.5,
-        status: 'verified',
-        fileUrl: '',
-        fileType: 'pdf',
-        createdAt: '2023-11-15T10:00:00Z',
-        updatedAt: '2023-11-15T10:00:00Z',
-      },
-    ]
+  } catch (error) {
+    console.error('获取数据失败:', error)
   } finally {
     loading.value = false
   }

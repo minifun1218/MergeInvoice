@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
+const userStore = useUserStore()
 const searchQuery = ref('')
+const showUserMenu = ref(false)
 
 const navItems = [
   { path: '/', label: '首页', icon: 'home' },
@@ -13,6 +16,19 @@ const navItems = [
 
 function isActive(path: string): boolean {
   return route.path === path
+}
+
+function handleLogout() {
+  userStore.logout()
+  showUserMenu.value = false
+}
+
+function toggleUserMenu() {
+  showUserMenu.value = !showUserMenu.value
+}
+
+function closeUserMenu() {
+  showUserMenu.value = false
 }
 </script>
 
@@ -76,12 +92,84 @@ function isActive(path: string): boolean {
         >
           <span class="material-symbols-outlined">notifications</span>
         </button>
-        <button
-          class="flex cursor-pointer items-center justify-center rounded-lg h-10 w-10 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-        >
-          <span class="material-symbols-outlined">account_circle</span>
-        </button>
+
+        <!-- 已登录状态 -->
+        <div v-if="userStore.isLoggedIn" class="relative">
+          <button
+            @click="toggleUserMenu"
+            class="flex cursor-pointer items-center gap-2 rounded-lg h-10 px-3 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          >
+            <img
+              v-if="userStore.user?.avatar"
+              :src="userStore.user.avatar"
+              class="w-6 h-6 rounded-full"
+            />
+            <span v-else class="material-symbols-outlined">account_circle</span>
+            <span class="text-sm font-medium max-w-20 truncate">{{ userStore.user?.nickname || userStore.user?.username }}</span>
+            <span class="material-symbols-outlined text-sm">expand_more</span>
+          </button>
+
+          <!-- 用户下拉菜单 -->
+          <Transition name="dropdown">
+            <div
+              v-if="showUserMenu"
+              class="absolute right-0 top-12 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-2 z-50"
+              @mouseleave="closeUserMenu"
+            >
+              <div class="px-4 py-2 border-b border-slate-100 dark:border-slate-700">
+                <p class="text-sm font-medium text-slate-900 dark:text-white truncate">{{ userStore.user?.nickname || userStore.user?.username }}</p>
+                <p class="text-xs text-slate-500 truncate">{{ userStore.user?.email }}</p>
+              </div>
+              <a href="#" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
+                <span class="material-symbols-outlined text-lg">person</span>
+                个人中心
+              </a>
+              <a href="#" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
+                <span class="material-symbols-outlined text-lg">settings</span>
+                账户设置
+              </a>
+              <div class="border-t border-slate-100 dark:border-slate-700 mt-2 pt-2">
+                <button
+                  @click="handleLogout"
+                  class="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <span class="material-symbols-outlined text-lg">logout</span>
+                  退出登录
+                </button>
+              </div>
+            </div>
+          </Transition>
+        </div>
+
+        <!-- 未登录状态 -->
+        <template v-else>
+          <button
+            @click="userStore.openLoginModal"
+            class="flex cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-sm font-medium"
+          >
+            登录
+          </button>
+          <button
+            @click="userStore.openRegisterModal"
+            class="flex cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-primary text-white hover:bg-primary/90 transition-colors text-sm font-medium"
+          >
+            注册
+          </button>
+        </template>
       </div>
     </div>
   </header>
 </template>
+
+<style scoped>
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all 0.2s ease;
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+</style>

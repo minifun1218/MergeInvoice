@@ -1,5 +1,14 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import AppHeader from '@/components/AppHeader.vue'
+import AuthModal from '@/components/AuthModal.vue'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
+
+onMounted(() => {
+  userStore.init()
+})
 </script>
 
 <template>
@@ -23,6 +32,9 @@ import AppHeader from '@/components/AppHeader.vue'
         </div>
       </footer>
     </div>
+
+    <!-- 登录注册弹窗 -->
+    <AuthModal />
   </div>
 </template>
 

@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { computed, onMounted, watch, ref } from 'vue'
 import { useInvoiceStore } from '@/stores/invoice'
 import { useLayoutStore } from '@/stores/layout'
 import { renderPage } from '@/utils/canvas'
 import { createMergeTask, downloadMergedFile } from '@/api/invoice'
-import type { Invoice } from '@/types/invoice'
 
 const invoiceStore = useInvoiceStore()
 const layoutStore = useLayoutStore()
@@ -14,60 +13,8 @@ const imageCache = new Map<string, HTMLImageElement>()
 const outputType = ref<'pdf' | 'zip'>('pdf')
 const isGenerating = ref(false)
 
-// 模拟发票数据
-const invoices = ref<Invoice[]>([
-  {
-    id: '1',
-    code: '044001900111',
-    number: '12345678',
-    type: 'other',
-    sellerName: '北京凯悦餐饮',
-    buyerName: '北京某某公司',
-    date: '2023-10-12',
-    amount: 398.23,
-    taxAmount: 51.77,
-    totalAmount: 450.0,
-    status: 'verified',
-    fileUrl: '',
-    fileType: 'pdf',
-    createdAt: '2023-10-12T10:00:00Z',
-    updatedAt: '2023-10-12T10:00:00Z',
-  },
-  {
-    id: '2',
-    code: '044001900112',
-    number: '87654321',
-    type: 'other',
-    sellerName: '京东办公用品',
-    buyerName: '北京某某公司',
-    date: '2023-10-14',
-    amount: 1132.74,
-    taxAmount: 147.26,
-    totalAmount: 1280.0,
-    status: 'verified',
-    fileUrl: '',
-    fileType: 'pdf',
-    createdAt: '2023-10-14T10:00:00Z',
-    updatedAt: '2023-10-14T10:00:00Z',
-  },
-  {
-    id: '3',
-    code: '044001900113',
-    number: '11223344',
-    type: 'taxi',
-    sellerName: '滴滴出行',
-    buyerName: '北京某某公司',
-    date: '2023-10-15',
-    amount: 56.5,
-    taxAmount: 0,
-    totalAmount: 56.5,
-    status: 'verified',
-    fileUrl: '',
-    fileType: 'pdf',
-    createdAt: '2023-10-15T10:00:00Z',
-    updatedAt: '2023-10-15T10:00:00Z',
-  },
-])
+// 从 store 获取发票数据
+const invoices = computed(() => invoiceStore.invoices)
 
 // 计算总金额
 const totalAmount = computed(() => {
@@ -94,10 +41,7 @@ async function renderPreview() {
 
 // 删除发票
 function removeInvoice(id: string) {
-  const index = invoices.value.findIndex((inv) => inv.id === id)
-  if (index > -1) {
-    invoices.value.splice(index, 1)
-  }
+  invoiceStore.removeInvoice(id)
 }
 
 // 格式化金额
@@ -138,11 +82,12 @@ watch(
 
 // 监听发票列表变化
 watch(
-  () => invoices.value.length,
+  () => invoices.value,
   () => {
     layoutStore.setTotalPages(totalPages.value)
     renderPreview()
   },
+  { immediate: true, deep: true },
 )
 
 onMounted(() => {
