@@ -11,7 +11,6 @@ const showUserMenu = ref(false)
 const navItems = [
   { path: '/', label: '首页', icon: 'home' },
   { path: '/upload', label: '上传发票', icon: 'upload_file' },
-  { path: '/history', label: '历史记录', icon: 'history' },
 ]
 
 function isActive(path: string): boolean {

@@ -2,46 +2,81 @@
 import { computed, onMounted, watch, ref } from 'vue'
 import { useInvoiceStore } from '@/stores/invoice'
 import { useLayoutStore } from '@/stores/layout'
-import { renderPage } from '@/utils/canvas'
-import { createMergeTask, downloadMergedFile } from '@/api/invoice'
+import { createMergeTask, downloadMergedFile, uploadAndMerge, deleteAllInvoices } from '@/api/invoice'
 
 const invoiceStore = useInvoiceStore()
 const layoutStore = useLayoutStore()
 
-const canvasRef = ref<HTMLCanvasElement | null>(null)
-const imageCache = new Map<string, HTMLImageElement>()
 const outputType = ref<'pdf' | 'zip'>('pdf')
 const isGenerating = ref(false)
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const isUploading = ref(false)
+const isLoading = ref(false)
 
-// 从 store 获取发票数据
+// 从 store 获取发票数据和合并后的PDF
 const invoices = computed(() => invoiceStore.invoices)
+const mergedPdfUrl = computed(() => invoiceStore.mergedPdfUrl)
 
 // 计算总金额
 const totalAmount = computed(() => {
   return invoices.value.reduce((sum, inv) => sum + inv.totalAmount, 0)
 })
 
-// 计算总页数
+// 计算总页数（每页2个发票）
 const totalPages = computed(() => {
   const perPage = layoutStore.invoicesPerPage
   return Math.ceil(invoices.value.length / perPage)
 })
 
-// 渲染预览
-async function renderPreview() {
-  if (!canvasRef.value) return
-  await renderPage(
-    canvasRef.value,
-    invoices.value,
-    layoutStore.currentPage - 1,
-    layoutStore.config,
-    imageCache,
-  )
-}
+// 当前页显示的发票
+const currentInvoices = computed(() => {
+  const perPage = layoutStore.invoicesPerPage
+  const startIndex = (layoutStore.currentPage - 1) * perPage
+  const endIndex = Math.min(startIndex + perPage, invoices.value.length)
+  return invoices.value.slice(startIndex, endIndex)
+})
 
 // 删除发票
-function removeInvoice(id: string) {
-  invoiceStore.removeInvoice(id)
+async function removeInvoice(id: string) {
+  if (!confirm('确定要删除这张发票吗？')) return
+
+  isLoading.value = true
+  try {
+    // 从store中删除
+    invoiceStore.removeInvoice(id)
+    console.log('✅ 已从前端删除发票:', id)
+
+    // 如果还有发票，重新合并
+    if (invoiceStore.invoices.length > 0) {
+      console.log('🔄 重新合并剩余发票，数量:', invoiceStore.invoices.length)
+
+      // 调用后端重新合并所有剩余发票
+      const { uploadAndMerge, deleteAllInvoices } = await import('@/api/invoice')
+
+      // 获取所有剩余发票的ID
+      const remainingIds = invoiceStore.invoices.map(inv => inv.id)
+
+      // 调用后端API重新生成合并PDF
+      // 注意：这里需要一个新的API endpoint来合并已有的发票，或者通过其他方式
+      // 暂时的解决方案：调用merge-service
+      const { createMergeTask } = await import('@/api/invoice')
+      const result = await createMergeTask(remainingIds, 'pdf', '2x1')
+
+      if (result.code === 0 && result.data.downloadUrl) {
+        invoiceStore.mergedPdfUrl = result.data.downloadUrl
+        console.log('✅ 重新合并完成')
+      }
+    } else {
+      // 没有发票了，清空PDF
+      invoiceStore.mergedPdfUrl = ''
+      console.log('✅ 所有发票已删除')
+    }
+  } catch (error) {
+    console.error('❌ 删除发票失败:', error)
+    alert('删除失败，请重试')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 // 格式化金额
@@ -49,12 +84,80 @@ function formatMoney(amount: number): string {
   return `¥ ${amount.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}`
 }
 
+// 下载合并后的PDF
+function downloadPdf() {
+  if (mergedPdfUrl.value) {
+    window.open(mergedPdfUrl.value, '_blank')
+  }
+}
+
+// 触发文件选择
+function triggerFileInput() {
+  fileInputRef.value?.click()
+}
+
+// 处理继续上传文件
+async function handleContinueUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (!input.files || input.files.length === 0) return
+
+  const files = Array.from(input.files)
+  const validFiles = files.filter((file) => {
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']
+    const maxSize = 10 * 1024 * 1024 // 10MB
+    return validTypes.includes(file.type) && file.size <= maxSize
+  })
+
+  if (validFiles.length === 0) {
+    alert('请选择有效的PDF或图片文件（最大10MB）')
+    return
+  }
+
+  isUploading.value = true
+  isLoading.value = true  // 开启加载状态
+  try {
+    console.log('📤 继续上传并拼接发票，文件数:', validFiles.length)
+
+    // 调用上传并合并API（会自动拼接到现有发票）
+    const result = await uploadAndMerge(validFiles, '2x1')
+
+    if (result.code === 0 && result.data) {
+      console.log('✅ 上传并拼接成功')
+      console.log('📋 新发票数据:', result.data.invoices)
+      console.log('📄 新合并PDF URL:', result.data.mergedPdfUrl)
+
+      // 更新发票列表和合并后的PDF URL
+      invoiceStore.invoices = result.data.invoices
+      invoiceStore.mergedPdfUrl = result.data.mergedPdfUrl
+      invoiceStore.totalPages = result.data.totalPages
+
+      console.log('✅ 拼接完成，当前发票总数:', invoiceStore.invoices.length)
+    } else {
+      console.error('❌ 上传拼接失败:', result.message)
+      alert('上传失败：' + result.message)
+    }
+  } catch (error) {
+    console.error('❌ 上传拼接失败:', error)
+    alert('上传失败，请重试')
+  } finally {
+    isUploading.value = false
+    isLoading.value = false  // 关闭加载状态
+    input.value = '' // 重置以便重复选择
+  }
+}
+
 // 生成PDF
 async function generatePdf() {
   isGenerating.value = true
   try {
     const invoiceIds = invoices.value.map((inv) => inv.id)
-    const result = await createMergeTask(invoiceIds, outputType.value)
+    // 传递当前布局配置到后端
+    const result = await createMergeTask(invoiceIds, outputType.value, layoutStore.config.layout)
+    console.log('📦 生成PDF请求:', {
+      invoiceIds,
+      outputType: outputType.value,
+      layout: layoutStore.config.layout
+    })
     if (result.code === 0 && result.data.id) {
       downloadMergedFile(result.data.id)
     }
@@ -71,28 +174,18 @@ function saveDraft() {
   console.log('保存草稿')
 }
 
-// 监听配置变化重新渲染
-watch(
-  () => [layoutStore.config, layoutStore.currentPage],
-  () => {
-    renderPreview()
-  },
-  { deep: true },
-)
-
 // 监听发票列表变化
 watch(
   () => invoices.value,
   () => {
     layoutStore.setTotalPages(totalPages.value)
-    renderPreview()
   },
   { immediate: true, deep: true },
 )
 
 onMounted(() => {
   layoutStore.setTotalPages(totalPages.value)
-  renderPreview()
+  console.log('📄 预览页面加载完成，发票数量:', invoices.value.length)
 })
 </script>
 
@@ -145,83 +238,75 @@ onMounted(() => {
       <div class="col-span-7 flex flex-col gap-4">
         <div class="flex items-center justify-between pb-2">
           <h3 class="text-slate-900 dark:text-white tracking-light text-xl font-bold leading-tight">
-            A4 打印预览 ({{ layoutStore.config.layout }})
+            发票预览 ({{ invoices.length }}张)
           </h3>
-          <div class="flex items-center gap-4">
-            <span class="text-slate-500 text-xs font-medium">
-              当前共 {{ totalPages }} 页
-            </span>
-            <div
-              class="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-1"
+          <div class="flex items-center gap-3">
+            <input
+              ref="fileInputRef"
+              type="file"
+              multiple
+              accept=".pdf,.jpg,.jpeg,.png"
+              class="hidden"
+              @change="handleContinueUpload"
+            />
+            <button
+              @click="triggerFileInput"
+              :disabled="isUploading"
+              class="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-sm font-medium rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
             >
-              <button
-                @click="layoutStore.zoomIn"
-                class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
-              >
-                <span class="material-symbols-outlined !text-xl">zoom_in</span>
-              </button>
-              <button
-                @click="layoutStore.zoomOut"
-                class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
-              >
-                <span class="material-symbols-outlined !text-xl">zoom_out</span>
-              </button>
-            </div>
+              <span class="material-symbols-outlined !text-lg">add</span>
+              <span>{{ isUploading ? '上传中...' : '继续添加' }}</span>
+            </button>
+            <button
+              v-if="mergedPdfUrl"
+              @click="downloadPdf"
+              class="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+            >
+              <span class="material-symbols-outlined !text-lg">download</span>
+              <span>下载PDF</span>
+            </button>
           </div>
         </div>
 
+        <!-- PDF预览区域 - 显示合并后的PDF -->
         <div
-          class="relative bg-slate-200 dark:bg-slate-950 rounded-xl border border-slate-300 dark:border-slate-800 overflow-hidden shadow-inner"
+          class="relative bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-800 overflow-hidden shadow-inner"
         >
-          <div class="h-[750px] overflow-y-auto p-8 flex flex-col items-center gap-12">
-            <div class="flex flex-col gap-4 w-full max-w-[530px]">
-              <canvas
-                ref="canvasRef"
-                class="w-full shadow-lg"
-                :style="{ transform: `scale(${layoutStore.previewZoom})`, transformOrigin: 'top center' }"
-              ></canvas>
-              <div class="flex justify-between items-center px-1">
-                <span class="text-slate-500 text-xs font-medium">
-                  第 {{ layoutStore.currentPage }} 页 / 共 {{ totalPages }} 页
-                </span>
-                <div class="flex gap-2">
-                  <button
-                    @click="layoutStore.prevPage"
-                    :disabled="layoutStore.currentPage <= 1"
-                    class="p-1 hover:bg-slate-100 rounded disabled:opacity-50"
-                  >
-                    <span class="material-symbols-outlined !text-lg">chevron_left</span>
-                  </button>
-                  <button
-                    @click="layoutStore.nextPage"
-                    :disabled="layoutStore.currentPage >= totalPages"
-                    class="p-1 hover:bg-slate-100 rounded disabled:opacity-50"
-                  >
-                    <span class="material-symbols-outlined !text-lg">chevron_right</span>
-                  </button>
-                </div>
+          <!-- 线性加载进度条 -->
+          <div v-if="isLoading" class="absolute top-0 left-0 right-0 z-50">
+            <div class="h-1 bg-slate-200 dark:bg-slate-800">
+              <div class="h-full bg-primary animate-pulse" style="width: 100%; animation: progress 1.5s ease-in-out infinite;">
               </div>
             </div>
+            <div class="absolute top-4 left-0 right-0 flex items-center justify-center">
+              <div class="bg-white dark:bg-slate-800 px-6 py-3 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 flex items-center gap-3">
+                <div class="w-5 h-5 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <span class="text-sm font-medium text-slate-700 dark:text-slate-300">正在处理并合并发票...</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="h-[750px] overflow-hidden bg-white dark:bg-slate-900">
+            <div v-if="!mergedPdfUrl" class="flex flex-col items-center justify-center h-full gap-4">
+              <span class="material-symbols-outlined text-slate-400 text-6xl">description</span>
+              <p class="text-slate-500">没有合并的PDF文件</p>
+              <p class="text-slate-400 text-sm">请先上传发票文件</p>
+            </div>
+
+            <!-- 合并后的PDF查看器（2x1布局，隐藏工具栏） -->
+            <iframe
+              v-else
+              :src="mergedPdfUrl + '#toolbar=0&navpanes=0&scrollbar=0'"
+              type="application/pdf"
+              class="w-full h-full border-0 bg-white"
+              :class="{ 'opacity-50': isLoading }"
+            ></iframe>
           </div>
         </div>
       </div>
 
       <!-- Right Panel -->
       <div class="col-span-5 flex flex-col gap-6">
-        <!-- Add More -->
-        <router-link
-          to="/upload"
-          class="p-6 rounded-xl bg-white dark:bg-slate-900 border-2 border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center gap-3 hover:border-primary transition-colors cursor-pointer"
-        >
-          <div class="size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-            <span class="material-symbols-outlined">add_circle</span>
-          </div>
-          <div class="text-center">
-            <p class="text-slate-900 dark:text-white text-sm font-bold">添加更多发票</p>
-            <p class="text-slate-500 text-xs">拖拽文件或点击此处上传 (PDF, JPG, PNG)</p>
-          </div>
-        </router-link>
-
         <!-- Invoice List -->
         <div
           class="flex flex-col bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm"
@@ -232,24 +317,25 @@ onMounted(() => {
             </h4>
             <span class="text-primary text-xs font-medium cursor-pointer">批量编辑</span>
           </div>
-          <div class="overflow-x-auto">
+          <!-- 添加固定高度和垂直滚动 -->
+          <div class="overflow-x-auto overflow-y-auto max-h-[400px]">
             <table class="w-full text-left text-sm">
-              <thead>
-                <tr class="text-slate-500 bg-slate-50 dark:bg-slate-800/50">
+              <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/50">
+                <tr class="text-slate-500">
+                  <th class="px-4 py-3 font-medium">序号</th>
                   <th class="px-4 py-3 font-medium">日期</th>
-                  <th class="px-4 py-3 font-medium">供应商</th>
-                  <th class="px-4 py-3 font-medium text-right">金额</th>
+                  <th class="px-4 py-3 font-medium text-right">总金额</th>
                   <th class="px-4 py-3 font-medium text-center">操作</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
                 <tr
-                  v-for="invoice in invoices"
+                  v-for="(invoice, index) in invoices"
                   :key="invoice.id"
                   class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
                 >
+                  <td class="px-4 py-4 dark:text-slate-300">#{{ index + 1 }}</td>
                   <td class="px-4 py-4 dark:text-slate-300">{{ invoice.date }}</td>
-                  <td class="px-4 py-4 dark:text-slate-300">{{ invoice.sellerName }}</td>
                   <td class="px-4 py-4 text-right font-medium text-slate-900 dark:text-white">
                     {{ formatMoney(invoice.totalAmount) }}
                   </td>

@@ -74,9 +74,49 @@ export async function batchUploadInvoices(files: File[]): Promise<ApiResponse<In
   return response.json()
 }
 
+/** 上传并自动合并发票 */
+export async function uploadAndMerge(
+  files: File[],
+  layout: '1x1' | '2x1' | '2x2' = '2x1',
+  onProgress?: (progress: number) => void,
+): Promise<ApiResponse<{ invoices: Invoice[]; mergedPdfUrl: string; totalPages: number; layout: string }>> {
+  const formData = new FormData()
+  files.forEach((file) => formData.append('files', file))
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', `${API_BASE}/invoices/upload-and-merge?layout=${layout}`)
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round((e.loaded / e.total) * 100))
+      }
+    }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText))
+      } else {
+        reject(new Error(xhr.statusText))
+      }
+    }
+
+    xhr.onerror = () => reject(new Error('上传失败'))
+    xhr.send(formData)
+  })
+}
+
 /** 删除发票 */
 export async function deleteInvoice(id: string): Promise<ApiResponse<null>> {
   const response = await fetch(`${API_BASE}/invoices/${id}`, {
+    method: 'DELETE',
+  })
+  return response.json()
+}
+
+/** 清空所有发票 */
+export async function deleteAllInvoices(): Promise<ApiResponse<null>> {
+  const response = await fetch(`${API_BASE}/invoices`, {
     method: 'DELETE',
   })
   return response.json()
@@ -86,11 +126,12 @@ export async function deleteInvoice(id: string): Promise<ApiResponse<null>> {
 export async function createMergeTask(
   invoiceIds: string[],
   outputType: 'pdf' | 'zip',
+  layout?: '1x1' | '2x1' | '2x2',
 ): Promise<ApiResponse<MergeTask>> {
   const response = await fetch(`${API_BASE}/merge-tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ invoiceIds, outputType }),
+    body: JSON.stringify({ invoiceIds, outputType, layout: layout || '2x1' }),
   })
   return response.json()
 }

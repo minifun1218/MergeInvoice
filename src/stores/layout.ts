@@ -157,4 +157,10 @@ export const useLayoutStore = defineStore('layout', () => {
     setTotalPages,
     resetConfig,
   }
+}, {
+  persist: {
+    key: 'layout-store',
+    storage: sessionStorage, // 使用 sessionStorage，关闭标签页后自动清除
+    paths: ['config', 'previewZoom', 'currentPage'], // 持久化布局配置和当前页
+  }
 })

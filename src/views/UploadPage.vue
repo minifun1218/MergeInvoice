@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useInvoiceStore } from '@/stores/invoice'
-import { batchUpload } from '@/utils/upload'
-import { getInvoiceList } from '@/api/invoice'
+import { uploadAndMerge, deleteAllInvoices } from '@/api/invoice'
 import type { UploadFileItem } from '@/types/invoice'
 
 const router = useRouter()
@@ -13,6 +12,16 @@ const isDragging = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
 const uploadQueue = computed(() => invoiceStore.uploadQueue)
+
+// 页面加载时清空之前的数据，开始新的上传会话
+onMounted(() => {
+  console.log('🔄 进入上传页面，清空之前的数据')
+  invoiceStore.clearUploadQueue()
+  invoiceStore.invoices = []
+  // 清空 sessionStorage 缓存
+  sessionStorage.removeItem('invoice-store')
+  console.log('🧹 已清空 sessionStorage 缓存')
+})
 
 // 文件类型图标
 function getFileIcon(fileType: string) {
@@ -95,39 +104,71 @@ async function startUpload() {
   const files = uploadQueue.value.map((item) => item.file)
   if (files.length === 0) return
 
+  // 🔄 步骤1: 清空前端store和缓存
+  console.log('🧹 步骤1: 清空前端store和sessionStorage')
+  invoiceStore.invoices = []
+  invoiceStore.mergedPdfUrl = ''
+  sessionStorage.removeItem('invoice-store')
+
+  // 🗑️ 步骤2: 调用批量删除API清空后端数据库
+  try {
+    console.log('🗑️ 步骤2: 清空后端数据库中的所有历史发票')
+    const result = await deleteAllInvoices()
+    if (result.code === 0) {
+      console.log('✅ 后端数据库已清空:', result.message)
+    }
+  } catch (error) {
+    console.warn('⚠️ 清空后端数据失败（继续上传）:', error)
+  }
+
   // 更新所有状态为上传中
   uploadQueue.value.forEach((item) => {
     invoiceStore.updateUploadProgress(item.id, 0, 'uploading')
   })
 
-  // 并发上传
-  await batchUpload(
-    files,
-    (fileIndex, progress) => {
-      const item = uploadQueue.value[fileIndex]
-      if (item) {
-        invoiceStore.updateUploadProgress(item.id, progress, 'uploading')
-      }
-    },
-    (results) => {
-      results.forEach((result, index) => {
-        const item = uploadQueue.value[index]
-        if (item) {
-          invoiceStore.updateUploadProgress(item.id, 100, result.success ? 'success' : 'error')
-        }
-      })
-    },
-  )
-
-  // 上传完成后获取发票列表并跳转到预览页
+  // 📤 步骤3: 上传并自动合并（使用2x1布局）
   try {
-    const res = await getInvoiceList({ page: 1, pageSize: 100 })
-    if (res.code === 0 && res.data?.data) {
-      invoiceStore.addInvoices(res.data.data)
+    console.log('📤 开始上传并自动合并，布局: 2x1')
+    const result = await uploadAndMerge(
+      files,
+      '2x1',
+      (progress) => {
+        // 更新所有文件的进度
+        uploadQueue.value.forEach((item) => {
+          invoiceStore.updateUploadProgress(item.id, progress, 'uploading')
+        })
+      }
+    )
+
+    // 标记所有文件为成功
+    uploadQueue.value.forEach((item) => {
+      invoiceStore.updateUploadProgress(item.id, 100, 'success')
+    })
+
+    if (result.code === 0 && result.data) {
+      console.log('✅ 上传并合并成功')
+      console.log('📋 发票数据:', result.data.invoices)
+      console.log('📄 合并PDF URL:', result.data.mergedPdfUrl)
+      console.log('📊 总页数:', result.data.totalPages)
+
+      // 保存发票列表和合并后的PDF URL
+      invoiceStore.invoices = result.data.invoices
+      invoiceStore.mergedPdfUrl = result.data.mergedPdfUrl
+      invoiceStore.totalPages = result.data.totalPages
+
+      console.log('✅ 已保存到store，发票数:', invoiceStore.invoices.length)
+    } else {
+      console.error('❌ 上传合并失败:', result.message)
     }
   } catch (error) {
-    console.error('获取发票列表失败:', error)
+    console.error('❌ 上传合并失败:', error)
+    // 标记所有文件为失败
+    uploadQueue.value.forEach((item) => {
+      invoiceStore.updateUploadProgress(item.id, 0, 'error')
+    })
   }
+
+  // 跳转到预览页
   router.push('/preview')
 }
 

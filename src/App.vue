@@ -12,17 +12,23 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden bg-slate-50 dark:bg-slate-950">
+  <div
+    class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden bg-slate-50 dark:bg-slate-950"
+  >
     <div class="layout-container flex h-full grow flex-col">
       <AppHeader />
       <router-view />
 
       <!-- Footer -->
-      <footer class="mt-auto px-10 py-8 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-        <div class="max-w-[1024px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+      <footer
+        class="mt-auto px-10 py-8 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800"
+      >
+        <div
+          class="max-w-[1024px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4"
+        >
           <div class="flex items-center gap-2 text-slate-400">
             <span class="material-symbols-outlined text-sm">copyright</span>
-            <p class="text-sm">2024 发票智慧管理系统. 保留所有权利.</p>
+            <p class="text-sm">发票管理系统. 保留所有权利.</p>
           </div>
           <div class="flex gap-6 text-slate-500 dark:text-slate-400 text-sm">
             <a class="hover:text-primary transition-colors" href="#">使用条款</a>
@@ -51,6 +57,10 @@ body {
 }
 
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
 }
 </style>

@@ -45,7 +45,9 @@ export async function pdfToImage(pdfUrl: string): Promise<HTMLImageElement> {
 
   const pdf = await pdfjsLib.getDocument(pdfUrl).promise
   const page = await pdf.getPage(1)
-  const viewport = page.getViewport({ scale: 1.5 })
+
+  // 使用更高的缩放比例以保持清晰度（2.5倍，约200 DPI）
+  const viewport = page.getViewport({ scale: 2.5 })
 
   const canvas = document.createElement('canvas')
   canvas.width = viewport.width
@@ -152,6 +154,13 @@ export async function renderPage(
     const invoice = invoices[i]
     const pos = positions[i - startIndex]
 
+    console.log(`🖼️ 渲染发票 #${i}:`, {
+      id: invoice.id,
+      fileUrl: invoice.fileUrl,
+      fileType: invoice.fileType,
+      hasCache: imageCache.has(invoice.id)
+    })
+
     // 绘制边框
     ctx.strokeStyle = '#e5e7eb'
     ctx.lineWidth = 1
@@ -161,25 +170,49 @@ export async function renderPage(
     let img = imageCache.get(invoice.id)
     if (!img && invoice.fileUrl) {
       try {
+        console.log(`📥 开始加载图片: ${invoice.fileUrl}`)
         if (invoice.fileType === 'pdf') {
           img = await pdfToImage(invoice.fileUrl)
         } else {
           img = await loadImage(invoice.fileUrl)
         }
         imageCache.set(invoice.id, img)
-      } catch {
+        console.log(`✅ 图片加载成功:`, img.width, 'x', img.height)
+      } catch (error) {
+        console.error(`❌ 图片加载失败:`, error)
         // 图片加载失败，绘制占位符
       }
     }
 
     if (img) {
-      // 保持比例缩放
+      // 保持比例缩放，填充满整个格子
       const scale = Math.min(pos.width / img.width, pos.height / img.height)
       const drawWidth = img.width * scale
       const drawHeight = img.height * scale
       const drawX = pos.x + (pos.width - drawWidth) / 2
       const drawY = pos.y + (pos.height - drawHeight) / 2
-      ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
+
+      console.log(`🎨 绘制发票 #${i}:`, {
+        imgSize: `${img.width}x${img.height}`,
+        posSize: `${pos.width}x${pos.height}`,
+        scale: scale.toFixed(3),
+        drawSize: `${drawWidth.toFixed(0)}x${drawHeight.toFixed(0)}`,
+        drawPos: `(${drawX.toFixed(0)}, ${drawY.toFixed(0)})`
+      })
+
+      // 绘制图片（确保完整显示）
+      try {
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
+      } catch (drawError) {
+        console.error(`❌ 绘制失败:`, drawError)
+        // 绘制占位符
+        ctx.fillStyle = '#f3f4f6'
+        ctx.fillRect(pos.x + 2, pos.y + 2, pos.width - 4, pos.height - 4)
+        ctx.fillStyle = '#9ca3af'
+        ctx.font = '14px Inter, sans-serif'
+        ctx.textAlign = 'center'
+        ctx.fillText('渲染失败', pos.x + pos.width / 2, pos.y + pos.height / 2)
+      }
     } else {
       // 绘制占位符
       ctx.fillStyle = '#f3f4f6'

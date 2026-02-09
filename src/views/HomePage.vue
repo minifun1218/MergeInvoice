@@ -111,7 +111,7 @@ function goToUpload() {
           <p
             class="text-slate-900 dark:text-white text-4xl font-black leading-tight tracking-[-0.033em]"
           >
-            欢迎回来, 管理员
+            发票合并
           </p>
           <p class="text-slate-500 dark:text-slate-400 text-base font-normal leading-normal">
             这里是您的发票管理看板，高效处理您的税务发票与合并需求。
@@ -192,23 +192,6 @@ function goToUpload() {
           </div>
         </div>
 
-        <div
-          class="flex min-w-[200px] flex-1 flex-col gap-2 rounded-xl p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm"
-        >
-          <div class="flex justify-between items-start">
-            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">本月节省税额</p>
-            <span class="material-symbols-outlined text-green-600">savings</span>
-          </div>
-          <p class="text-slate-900 dark:text-white tracking-light text-3xl font-bold leading-tight">
-            {{ formatMoney(stats.savedTax) }}
-          </p>
-          <div class="flex items-center gap-1 mt-1">
-            <span class="material-symbols-outlined text-green-600 text-sm">trending_up</span>
-            <p class="text-green-600 text-sm font-medium leading-normal">
-              +{{ stats.savedChange }}% 效率提升
-            </p>
-          </div>
-        </div>
       </div>
 
       <!-- Quick Start Section -->
@@ -284,98 +267,6 @@ function goToUpload() {
               </p>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Recent Activity Section -->
-      <div class="mt-8 px-4">
-        <div class="flex items-center justify-between mb-4">
-          <h2
-            class="text-slate-900 dark:text-white text-[22px] font-bold leading-tight tracking-[-0.015em] flex items-center gap-2"
-          >
-            <span class="material-symbols-outlined">history</span>
-            最近活动
-          </h2>
-          <router-link to="/history" class="text-primary text-sm font-medium hover:underline">
-            查看全部
-          </router-link>
-        </div>
-        <div
-          class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm"
-        >
-          <table class="w-full text-left border-collapse">
-            <thead class="bg-slate-50 dark:bg-slate-800/50">
-              <tr>
-                <th
-                  class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
-                >
-                  发票类型
-                </th>
-                <th
-                  class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
-                >
-                  销方名称
-                </th>
-                <th
-                  class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
-                >
-                  日期
-                </th>
-                <th
-                  class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
-                >
-                  金额
-                </th>
-                <th
-                  class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right"
-                >
-                  状态
-                </th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-              <tr
-                v-for="invoice in recentInvoices"
-                :key="invoice.id"
-                class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
-              >
-                <td class="px-6 py-4">
-                  <div class="flex items-center gap-3">
-                    <span
-                      :class="[
-                        'material-symbols-outlined p-1.5 rounded-lg text-lg',
-                        getTypeIcon(invoice.type).color,
-                      ]"
-                    >
-                      {{ getTypeIcon(invoice.type).icon }}
-                    </span>
-                    <span class="text-slate-900 dark:text-white font-medium">
-                      {{ getTypeName(invoice.type) }}
-                    </span>
-                  </div>
-                </td>
-                <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-sm">
-                  {{ invoice.sellerName }}
-                </td>
-                <td class="px-6 py-4 text-slate-500 dark:text-slate-400 text-sm">
-                  {{ invoice.date }}
-                </td>
-                <td class="px-6 py-4 text-slate-900 dark:text-white font-bold">
-                  {{ formatMoney(invoice.totalAmount) }}
-                </td>
-                <td class="px-6 py-4 text-right">
-                  <span
-                    :class="[
-                      'px-3 py-1 text-xs font-bold rounded-full',
-                      getStatusClass(invoice.status),
-                    ]"
-                  >
-                    {{ getStatusText(invoice.status) }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
     </div>

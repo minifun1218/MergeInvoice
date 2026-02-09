@@ -16,6 +16,10 @@ export const useInvoiceStore = defineStore('invoice', () => {
   const dashboardStats = ref<DashboardStats | null>(null)
   // 加载状态
   const loading = ref(false)
+  // 合并后的PDF URL
+  const mergedPdfUrl = ref<string>('')
+  // 合并PDF总页数
+  const totalPages = ref<number>(0)
 
   // 计算属性：选中的发票列表
   const selectedInvoices = computed(() => {
@@ -129,6 +133,8 @@ export const useInvoiceStore = defineStore('invoice', () => {
     currentMergeTask,
     dashboardStats,
     loading,
+    mergedPdfUrl,
+    totalPages,
     selectedInvoices,
     selectedTotalAmount,
     uploadProgress,
@@ -143,5 +149,11 @@ export const useInvoiceStore = defineStore('invoice', () => {
     selectAll,
     setDashboardStats,
     setCurrentMergeTask,
+  }
+}, {
+  persist: {
+    key: 'invoice-store',
+    storage: sessionStorage, // 使用 sessionStorage，关闭标签页后自动清除
+    paths: ['invoices', 'mergedPdfUrl', 'totalPages'], // 持久化发票列表和合并PDF信息
   }
 })

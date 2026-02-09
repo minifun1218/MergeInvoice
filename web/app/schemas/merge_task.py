@@ -9,6 +9,7 @@ class MergeTaskCreate(BaseModel):
     """创建合并任务"""
     invoice_ids: List[str] = Field(alias="invoiceIds")
     output_type: str = Field(default="pdf", alias="outputType")
+    layout: str = Field(default="2x1", description="布局方式: 1x1, 2x1, 2x2")
 
     class Config:
         populate_by_name = True

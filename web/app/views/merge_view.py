@@ -21,7 +21,13 @@ async def create_merge_task(
     if not request.invoice_ids:
         raise HTTPException(status_code=400, detail="请选择要合并的发票")
 
-    task = await MergeService.create_task(db, request.invoice_ids, request.output_type)
+    # 传递布局参数到服务层
+    task = await MergeService.create_task(
+        db,
+        request.invoice_ids,
+        request.output_type,
+        request.layout
+    )
 
     return ApiResponse(
         code=0,

@@ -39,8 +39,24 @@ app.include_router(api_router)
 
 @app.on_event("startup")
 async def startup():
-    """应用启动时初始化数据库"""
+    """应用启动时初始化数据库和OCR服务"""
+    print("🚀 系统启动中...")
+
+    # 初始化数据库
     init_db()
+    print("✅ 数据库初始化完成")
+
+    # 预加载OCR服务（后台挂载，加快后续识别速度）
+    try:
+        from app.services.ocr_service import OCRService
+        print("⏳ 正在初始化 RapidOCR 服务...")
+        OCRService.get_ocr()
+        print("✅ RapidOCR 服务已预加载，识别速度已优化")
+    except Exception as e:
+        print(f"⚠️ OCR服务初始化失败: {e}")
+        print("   系统将继续运行，OCR将在首次使用时初始化")
+
+    print("🎉 系统启动完成！")
 
 
 @app.get("/health")
